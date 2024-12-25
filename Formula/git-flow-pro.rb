@@ -32,11 +32,24 @@ class GitFlowPro < Formula
   end
 
   test do
+    # Create test Zsh environment
+    testpath.install resource("scripts")
+    (testpath/".zshrc").write <<~EOS
+      export PATH="#{bin}:$PATH"
+      source #{opt_prefix}/scripts/install.sh
+    EOS
+
+    # Test basic commands
     assert_match "Git Flow Pro", shell_output("#{opt_prefix}/scripts/install.sh --help")
-    assert_match "Git Flow Pro", shell_output("zsh -c 'source #{opt_prefix}/scripts/install.sh && githelp'")
+    
+    # Test Git initialization
     system "git", "init"
     system "git", "config", "user.name", "BrewTestBot"
     system "git", "config", "user.email", "brew@test.bot"
     assert_predicate testpath/".git", :exist?
+
+    # Test githelp command with custom ZDOTDIR
+    ENV["ZDOTDIR"] = testpath
+    assert_match "Git Flow Pro", shell_output("zsh -c 'source #{opt_prefix}/scripts/install.sh && githelp'")
   end
 end
