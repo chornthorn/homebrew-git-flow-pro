@@ -14,11 +14,13 @@ jobs:
 
       - name: Checkout tap
         uses: actions/checkout@v4
+        with:
+          path: homebrew-git-flow-pro
 
       - name: Setup tap
         run: |
           mkdir -p "$(brew --repo)/Library/Taps/chornthorn"
-          cp -a . "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          cp -r homebrew-git-flow-pro "$(brew --repo)/Library/Taps/chornthorn/"
           brew tap
 
       - name: Run tests
