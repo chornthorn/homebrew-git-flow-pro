@@ -7,12 +7,18 @@ jobs:
   update-formula:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Checkout tap
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
 
       - name: Configure Git
         run: |
+          cd $(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -21,28 +27,28 @@ jobs:
           VERSION: ${{ github.event.client_payload.version }}
           SHA256: ${{ github.event.client_payload.sha256 }}
         run: |
+          cd $(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro
           sed -i 's|url ".*"|url "https://github.com/chornthorn/git-flow-pro/archive/refs/tags/'"${VERSION}"'.tar.gz"|' Formula/git-flow-pro.rb
           sed -i 's|sha256 ".*"|sha256 "'"${SHA256}"'"|' Formula/git-flow-pro.rb
 
       - name: Commit and Push
         run: |
+          cd $(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro
           git add Formula/git-flow-pro.rb
           git commit -m "Update formula to version ${VERSION}"
           git push
 
-      - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@master
-
       - name: Verify Formula
         run: |
-          brew tap chornthorn/git-flow-pro
-          brew audit --strict --online git-flow-pro
+          cd $(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro
+          brew audit --strict --online ./Formula/git-flow-pro.rb
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         if: failure()
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
           commit-message: "Update formula to version ${{ github.event.client_payload.version }}"
           title: "Update formula to version ${{ github.event.client_payload.version }}"
           body: |
