@@ -20,8 +20,9 @@ jobs:
 
       - name: Setup tap
         run: |
-          mkdir -p $(brew --repo)/Library/Taps/chornthorn
-          cp -a homebrew-git-flow-pro $(brew --repo)/Library/Taps/chornthorn/
+          sudo mkdir -p $(brew --repo)/Library/Taps/chornthorn
+          sudo cp -R homebrew-git-flow-pro $(brew --repo)/Library/Taps/chornthorn/
+          sudo chown -R $(whoami) $(brew --repo)/Library/Taps/chornthorn
           brew tap --list
 
       - name: Cache Homebrew Bundler RubyGems
