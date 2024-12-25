@@ -23,7 +23,7 @@ jobs:
           sudo mkdir -p $(brew --repo)/Library/Taps/chornthorn
           sudo cp -R homebrew-git-flow-pro $(brew --repo)/Library/Taps/chornthorn/
           sudo chown -R $(whoami) $(brew --repo)/Library/Taps/chornthorn
-          brew tap --list
+          brew tap  # Changed this line to remove --list flag
 
       - name: Cache Homebrew Bundler RubyGems
         id: cache
