@@ -20,55 +20,37 @@ jobs:
 
       - name: Setup tap
         run: |
-          sudo mkdir -p "$(brew --repo)/Library/Taps/chornthorn"
-          sudo cp -R homebrew-git-flow-pro "$(brew --repo)/Library/Taps/chornthorn/"
-          sudo chown -R "$(whoami)" "$(brew --repo)/Library/Taps/chornthorn"
+          mkdir -p "$(brew --repo)/Library/Taps/chornthorn"
+          cp -R homebrew-git-flow-pro "$(brew --repo)/Library/Taps/chornthorn/"
           brew tap
 
-      - name: Cache Homebrew Bundler RubyGems
-        id: cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.set-up-homebrew.outputs.gems-path }}
-          key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
-          restore-keys: ${{ runner.os }}-rubygems-
-
-      - name: Install Homebrew Bundler RubyGems
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: brew install-bundler-gems
-
       - name: Check formula syntax
-        run: brew style chornthorn/homebrew-git-flow-pro/Formula/git-flow-pro.rb
-
-      - name: Check formula style
-        run: |
-          cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
-          brew style .
+        run: brew style chornthorn/git-flow-pro
 
       - name: Run brew audit
-        run: brew audit --strict --online chornthorn/homebrew-git-flow-pro/Formula/git-flow-pro.rb
+        run: brew audit --strict --online chornthorn/git-flow-pro
 
       - name: Test formula installation
         run: |
-          brew install --build-from-source chornthorn/homebrew-git-flow-pro/Formula/git-flow-pro.rb
-          brew test chornthorn/homebrew-git-flow-pro/Formula/git-flow-pro.rb
-          brew linkage --test chornthorn/homebrew-git-flow-pro/Formula/git-flow-pro.rb
+          brew install --build-from-source chornthorn/git-flow-pro
+          brew test chornthorn/git-flow-pro
+          brew linkage --test chornthorn/git-flow-pro
           brew uninstall git-flow-pro
 
       - name: Test formula reinstallation
         run: |
-          brew install --build-from-source chornthorn/homebrew-git-flow-pro/Formula/git-flow-pro.rb
+          brew install --build-from-source chornthorn/git-flow-pro
           brew uninstall git-flow-pro
 
       - name: Test formula dependencies
         run: |
-          brew deps --include-build chornthorn/homebrew-git-flow-pro/Formula/git-flow-pro.rb
-          brew deps --include-test chornthorn/homebrew-git-flow-pro/Formula/git-flow-pro.rb
-          brew deps --include-optional chornthorn/homebrew-git-flow-pro/Formula/git-flow-pro.rb
+          brew deps --include-build chornthorn/git-flow-pro
+          brew deps --include-test chornthorn/git-flow-pro
+          brew deps --include-optional chornthorn/git-flow-pro
 
       - name: Verify formula installation files
         run: |
-          brew install --build-from-source chornthorn/homebrew-git-flow-pro/Formula/git-flow-pro.rb
+          brew install --build-from-source chornthorn/git-flow-pro
           test -d "$(brew --prefix)/opt/git-flow-pro"
           test -f "$(brew --prefix)/opt/git-flow-pro/scripts/install.sh"
           test -d "$(brew --prefix)/opt/git-flow-pro/config"
@@ -76,15 +58,15 @@ jobs:
 
       - name: Test formula scripts
         run: |
-          brew install --build-from-source chornthorn/homebrew-git-flow-pro/Formula/git-flow-pro.rb
+          brew install --build-from-source chornthorn/git-flow-pro
           "$(brew --prefix)/opt/git-flow-pro/scripts/install.sh" --help
           brew uninstall git-flow-pro
 
       - name: Test formula with debug output
         if: failure()
         run: |
-          brew install --verbose --debug chornthorn/homebrew-git-flow-pro/Formula/git-flow-pro.rb
-          brew test --verbose --debug chornthorn/homebrew-git-flow-pro/Formula/git-flow-pro.rb
+          brew install --verbose --debug chornthorn/git-flow-pro
+          brew test --verbose --debug chornthorn/git-flow-pro
           brew uninstall git-flow-pro
 
       - name: Upload build logs
