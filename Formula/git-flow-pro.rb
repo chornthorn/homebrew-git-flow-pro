@@ -34,7 +34,6 @@ class GitFlowPro < Formula
   test do
     assert_match "Git Flow Pro", shell_output("#{opt_prefix}/scripts/install.sh --help")
     assert_match "Git Flow Pro", shell_output("zsh -c 'source #{opt_prefix}/scripts/install.sh && githelp'")
-    
     system "git", "init"
     system "git", "config", "user.name", "BrewTestBot"
     system "git", "config", "user.email", "brew@test.bot"
