@@ -41,7 +41,7 @@ class GitFlowPro < Formula
 
     # Test basic commands
     assert_match "Git Flow Pro", shell_output("#{opt_prefix}/scripts/install.sh --help")
-    
+
     # Test Git initialization
     system "git", "init"
     system "git", "config", "user.name", "BrewTestBot"
