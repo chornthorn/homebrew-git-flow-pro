@@ -14,7 +14,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          path: "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          path: homebrew-git-flow-pro
+
+      - name: Setup tap
+        run: |
+          mkdir -p $(brew --repo)/Library/Taps/chornthorn
+          cp -a homebrew-git-flow-pro $(brew --repo)/Library/Taps/chornthorn/
+          brew tap --list
 
       - name: Configure Git
         run: |
@@ -39,16 +45,14 @@ jobs:
           git push
 
       - name: Verify Formula
-        run: |
-          cd $(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro
-          brew audit --strict --online ./Formula/git-flow-pro.rb
+        run: brew audit --strict --online chornthorn/git-flow-pro
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         if: failure()
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          path: "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          path: $(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro
           commit-message: "Update formula to version ${{ github.event.client_payload.version }}"
           title: "Update formula to version ${{ github.event.client_payload.version }}"
           body: |

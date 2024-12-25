@@ -16,7 +16,13 @@ jobs:
       - name: Checkout tap
         uses: actions/checkout@v4
         with:
-          path: "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          path: homebrew-git-flow-pro
+
+      - name: Setup tap
+        run: |
+          mkdir -p $(brew --repo)/Library/Taps/chornthorn
+          cp -a homebrew-git-flow-pro $(brew --repo)/Library/Taps/chornthorn/
+          brew tap --list
 
       - name: Cache Homebrew Bundler RubyGems
         id: cache
@@ -31,21 +37,16 @@ jobs:
         run: brew install-bundler-gems
 
       - name: Check formula style
-        run: |
-          cd $(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro
-          brew style ./Formula/git-flow-pro.rb
+        run: brew style chornthorn/git-flow-pro
 
       - name: Audit formula
-        run: |
-          cd $(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro
-          brew audit --strict --online ./Formula/git-flow-pro.rb
+        run: brew audit --strict --online chornthorn/git-flow-pro
 
       - name: Test formula
         run: |
-          cd $(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro
-          brew install --build-from-source ./Formula/git-flow-pro.rb
-          brew test git-flow-pro
-          brew uninstall git-flow-pro
+          brew install --build-from-source chornthorn/git-flow-pro
+          brew test chornthorn/git-flow-pro
+          brew uninstall chornthorn/git-flow-pro
 
       - name: Upload logs
         if: always()
