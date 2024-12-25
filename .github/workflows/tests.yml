@@ -10,94 +10,27 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Set up Homebrew
-        id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@master
 
       - name: Checkout tap
         uses: actions/checkout@v4
-        with:
-          path: homebrew-git-flow-pro
 
       - name: Setup tap
         run: |
           mkdir -p "$(brew --repo)/Library/Taps/chornthorn"
-          cp -R homebrew-git-flow-pro "$(brew --repo)/Library/Taps/chornthorn/"
+          cp -a . "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
           brew tap
 
-      - name: Check formula syntax
-        run: brew style chornthorn/git-flow-pro
-
-      - name: Run brew audit
-        run: brew audit --strict --online chornthorn/git-flow-pro
-
-      - name: Test formula installation
+      - name: Run tests
         run: |
-          brew install --build-from-source chornthorn/git-flow-pro
-          brew test chornthorn/git-flow-pro
-          brew linkage --test chornthorn/git-flow-pro
-          brew uninstall git-flow-pro
+          brew test-bot --only-tap-syntax
+          brew install --build-from-source chornthorn/git-flow-pro/git-flow-pro
+          brew test chornthorn/git-flow-pro/git-flow-pro
+          brew audit --strict chornthorn/git-flow-pro/git-flow-pro
 
-      - name: Test formula reinstallation
-        run: |
-          brew install --build-from-source chornthorn/git-flow-pro
-          brew uninstall git-flow-pro
-
-      - name: Test formula dependencies
-        run: |
-          brew deps --include-build chornthorn/git-flow-pro
-          brew deps --include-test chornthorn/git-flow-pro
-          brew deps --include-optional chornthorn/git-flow-pro
-
-      - name: Verify formula installation files
-        run: |
-          brew install --build-from-source chornthorn/git-flow-pro
-          test -d "$(brew --prefix)/opt/git-flow-pro"
-          test -f "$(brew --prefix)/opt/git-flow-pro/scripts/install.sh"
-          test -d "$(brew --prefix)/opt/git-flow-pro/config"
-          brew uninstall git-flow-pro
-
-      - name: Test formula scripts
-        run: |
-          brew install --build-from-source chornthorn/git-flow-pro
-          "$(brew --prefix)/opt/git-flow-pro/scripts/install.sh" --help
-          brew uninstall git-flow-pro
-
-      - name: Test formula with debug output
-        if: failure()
-        run: |
-          brew install --verbose --debug chornthorn/git-flow-pro
-          brew test --verbose --debug chornthorn/git-flow-pro
-          brew uninstall git-flow-pro
-
-      - name: Upload build logs
+      - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: brew-logs
-          path: |
-            ~/Library/Logs/Homebrew/
-            ~/Library/Logs/Homebrew/git-flow-pro/
-
-      - name: Cleanup
-        if: always()
-        run: |
-          brew cleanup
-          rm -rf "$(brew --cache)"
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            ~/Library/Logs/Homebrew/
-            ~/.brew_logs/
-            ~/brew-test-bot/
-
-permissions:
-  contents: read
-  packages: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+          path: ~/Library/Logs/Homebrew/

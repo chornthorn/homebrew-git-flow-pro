@@ -2,8 +2,15 @@ class GitFlowPro < Formula
   desc "Enhanced Git Flow workflow management for Zsh"
   homepage "https://github.com/chornthorn/git-flow-pro"
   url "https://github.com/chornthorn/git-flow-pro/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "03ec8b260c30b49972a70b812acd9373e196ddf685e8537df19dcbbe273eab64"
+  sha256 "d83550dd4a28b1fd0ca49c58a2c00676d0a37d6e8294f984d6fdb59725d84a05"
   license "MIT"
+
+  head "https://github.com/chornthorn/git-flow-pro.git", branch: "main"
+
+  livecheck do
+    url :stable
+    strategy :github_latest
+  end
 
   depends_on "git"
   depends_on "git-flow"
@@ -29,5 +36,9 @@ class GitFlowPro < Formula
   test do
     system "#{opt_prefix}/scripts/install.sh", "--help"
     assert_match "Git Flow Pro", shell_output("zsh -c 'source #{opt_prefix}/scripts/install.sh && githelp'")
+    system "git", "init"
+    system "git", "config", "user.name", "BrewTestBot"
+    system "git", "config", "user.email", "brew@test.bot"
+    assert_match "Initialized empty Git repository", shell_output("git init 2>&1")
   end
 end

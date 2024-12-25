@@ -34,8 +34,20 @@ jobs:
           SHA256: ${{ github.event.client_payload.sha256 }}
         run: |
           cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          if [ -z "$VERSION" ] || [ -z "$SHA256" ]; then
+            echo "Error: Version or SHA256 not provided"
+            exit 1
+          fi
           sed -i 's|url ".*"|url "https://github.com/chornthorn/git-flow-pro/archive/refs/tags/'"${VERSION}"'.tar.gz"|' Formula/git-flow-pro.rb
           sed -i 's|sha256 ".*"|sha256 "'"${SHA256}"'"|' Formula/git-flow-pro.rb
+
+      - name: Verify Formula
+        run: brew audit --strict --online chornthorn/git-flow-pro
+
+      - name: Test Formula
+        run: |
+          brew install --build-from-source chornthorn/git-flow-pro/git-flow-pro
+          brew test chornthorn/git-flow-pro/git-flow-pro
 
       - name: Commit and Push
         run: |
@@ -43,9 +55,6 @@ jobs:
           git add Formula/git-flow-pro.rb
           git commit -m "Update formula to version ${VERSION}"
           git push
-
-      - name: Verify Formula
-        run: brew audit --strict --online chornthorn/git-flow-pro
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
@@ -71,3 +80,16 @@ jobs:
         with:
           name: brew-logs
           path: ~/Library/Logs/Homebrew/
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Formula update failed',
+              body: 'The formula update workflow failed. Please check the logs.',
+              labels: ['bug', 'automation']
+            })
