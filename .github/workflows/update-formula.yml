@@ -18,13 +18,13 @@ jobs:
 
       - name: Setup tap
         run: |
-          mkdir -p $(brew --repo)/Library/Taps/chornthorn
-          cp -a homebrew-git-flow-pro $(brew --repo)/Library/Taps/chornthorn/
-          brew tap --list
+          mkdir -p "$(brew --repo)/Library/Taps/chornthorn"
+          cp -a homebrew-git-flow-pro "$(brew --repo)/Library/Taps/chornthorn/"
+          brew tap
 
       - name: Configure Git
         run: |
-          cd $(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro
+          cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -33,13 +33,13 @@ jobs:
           VERSION: ${{ github.event.client_payload.version }}
           SHA256: ${{ github.event.client_payload.sha256 }}
         run: |
-          cd $(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro
+          cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
           sed -i 's|url ".*"|url "https://github.com/chornthorn/git-flow-pro/archive/refs/tags/'"${VERSION}"'.tar.gz"|' Formula/git-flow-pro.rb
           sed -i 's|sha256 ".*"|sha256 "'"${SHA256}"'"|' Formula/git-flow-pro.rb
 
       - name: Commit and Push
         run: |
-          cd $(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro
+          cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
           git add Formula/git-flow-pro.rb
           git commit -m "Update formula to version ${VERSION}"
           git push
@@ -52,7 +52,7 @@ jobs:
         if: failure()
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          path: $(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro
+          path: "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
           commit-message: "Update formula to version ${{ github.event.client_payload.version }}"
           title: "Update formula to version ${{ github.event.client_payload.version }}"
           body: |
@@ -64,3 +64,10 @@ jobs:
           branch: update-formula
           base: main
           delete-branch: true
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brew-logs
+          path: ~/Library/Logs/Homebrew/
