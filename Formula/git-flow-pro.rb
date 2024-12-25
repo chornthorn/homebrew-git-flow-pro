@@ -5,10 +5,6 @@ class GitFlowPro < Formula
   sha256 "d83550dd4a28b1fd0ca49c58a2c00676d0a37d6e8294f984d6fdb59725d84a05"
   license "MIT"
 
-  head do
-    url "https://github.com/chornthorn/git-flow-pro.git", branch: "main"
-  end
-
   livecheck do
     url :stable
     regex(/^v?(\d+(?:\.\d+)+)$/i)
