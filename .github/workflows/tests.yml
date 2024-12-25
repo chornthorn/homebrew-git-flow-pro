@@ -25,12 +25,23 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: brew install-bundler-gems
 
-      - run: brew test-bot --only-cleanup-before
+      - name: Check formula style
+        run: |
+          brew style chornthorn/git-flow-pro
+          brew audit --strict --online chornthorn/git-flow-pro
 
-      - run: brew test-bot --only-setup
-
-      - run: brew test-bot --only-tap-syntax
-
-      - run: brew test-bot --only-formulae
+      - name: Run brew test-bot
+        run: |
+          brew test-bot --only-cleanup-before
+          brew test-bot --only-setup
+          brew test-bot --only-tap-syntax
+          brew test-bot --only-formulae
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: logs
+          path: ~/Library/Logs/Homebrew/
