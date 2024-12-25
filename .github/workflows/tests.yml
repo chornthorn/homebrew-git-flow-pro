@@ -1,53 +1,69 @@
-name: brew test-bot
+name: Update Formula
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  repository_dispatch:
+    types: [update-formula]
 
 jobs:
-  test-bot:
-    runs-on: macos-latest
+  update-formula:
+    runs-on: ubuntu-latest
     steps:
       - name: Set up Homebrew
-        id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@master
 
       - name: Checkout tap
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           path: homebrew-git-flow-pro
 
       - name: Setup tap
         run: |
-          sudo mkdir -p $(brew --repo)/Library/Taps/chornthorn
-          sudo cp -R homebrew-git-flow-pro $(brew --repo)/Library/Taps/chornthorn/
-          sudo chown -R $(whoami) $(brew --repo)/Library/Taps/chornthorn
-          brew tap  # Changed this line to remove --list flag
+          mkdir -p "$(brew --repo)/Library/Taps/chornthorn"
+          cp -a homebrew-git-flow-pro "$(brew --repo)/Library/Taps/chornthorn/"
+          brew tap
 
-      - name: Cache Homebrew Bundler RubyGems
-        id: cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.set-up-homebrew.outputs.gems-path }}
-          key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
-          restore-keys: ${{ runner.os }}-rubygems-
+      - name: Configure Git
+        run: |
+          cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Install Homebrew Bundler RubyGems
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: brew install-bundler-gems
+      - name: Update Formula
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+          SHA256: ${{ github.event.client_payload.sha256 }}
+        run: |
+          cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          sed -i 's|url ".*"|url "https://github.com/chornthorn/git-flow-pro/archive/refs/tags/'"${VERSION}"'.tar.gz"|' Formula/git-flow-pro.rb
+          sed -i 's|sha256 ".*"|sha256 "'"${SHA256}"'"|' Formula/git-flow-pro.rb
 
-      - name: Check formula style
-        run: brew style chornthorn/git-flow-pro
+      - name: Commit and Push
+        run: |
+          cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          git add Formula/git-flow-pro.rb
+          git commit -m "Update formula to version ${VERSION}"
+          git push
 
-      - name: Audit formula
+      - name: Verify Formula
         run: brew audit --strict --online chornthorn/git-flow-pro
 
-      - name: Test formula
-        run: |
-          brew install --build-from-source chornthorn/git-flow-pro
-          brew test chornthorn/git-flow-pro
-          brew uninstall chornthorn/git-flow-pro
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        if: failure()
+        with:
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          commit-message: "Update formula to version ${{ github.event.client_payload.version }}"
+          title: "Update formula to version ${{ github.event.client_payload.version }}"
+          body: |
+            Automated update of Git Flow Pro formula to version ${{ github.event.client_payload.version }}
+
+            SHA256: `${{ github.event.client_payload.sha256 }}`
+
+            This PR was automatically created by GitHub Actions.
+          branch: update-formula
+          base: main
+          delete-branch: true
 
       - name: Upload logs
         if: always()
