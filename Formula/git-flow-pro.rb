@@ -2,7 +2,8 @@ class GitFlowPro < Formula
   desc "Enhanced Git Flow workflow management for Zsh"
   homepage "https://github.com/chornthorn/git-flow-pro"
   url "https://github.com/chornthorn/git-flow-pro/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "YOUR_TARBALL_SHA256"
+  sha256 "03ec8b260c30b49972a70b812acd9373e196ddf685e8537df19dcbbe273eab64" # Will be updated automatically by GitHub Actions
+  version "1.0.0"
   license "MIT"
 
   depends_on "git"
