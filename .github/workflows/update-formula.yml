@@ -7,14 +7,14 @@ jobs:
   update-formula:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
       - name: Configure Git
         run: |
-          git config user.name github-actions[bot]
-          git config user.email github-actions[bot]@users.noreply.github.com
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Update Formula
         env:
@@ -22,12 +22,11 @@ jobs:
           SHA256: ${{ github.event.client_payload.sha256 }}
         run: |
           # Remove 'v' prefix if present
-          VERSION_NO_V=$(echo ${VERSION} | sed 's/^v//')
+          VERSION_NO_V="${VERSION#v}"
 
           # Update formula
-          sed -i "s/version \".*\"/version \"${VERSION_NO_V}\"/" Formula/git-flow-pro.rb
-          sed -i "s/sha256 \".*\"/sha256 \"${SHA256}\"/" Formula/git-flow-pro.rb
-          sed -i "s|/v.*\.tar\.gz|/${VERSION}.tar.gz|" Formula/git-flow-pro.rb
+          sed -i 's|url ".*"|url "https://github.com/chornthorn/git-flow-pro/archive/refs/tags/'"${VERSION}"'.tar.gz"|' Formula/git-flow-pro.rb
+          sed -i 's|sha256 ".*"|sha256 "'"${SHA256}"'"|' Formula/git-flow-pro.rb
 
       - name: Commit and Push
         run: |
@@ -35,7 +34,27 @@ jobs:
           git commit -m "Update formula to version ${VERSION}"
           git push
 
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
       - name: Verify Formula
         run: |
           brew tap chornthorn/git-flow-pro
           brew audit --strict --online git-flow-pro
+
+      - name: Create Pull Request
+        if: failure()
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          commit-message: "Update formula to version ${{ github.event.client_payload.version }}"
+          title: "Update formula to version ${{ github.event.client_payload.version }}"
+          body: |
+            Automated update of Git Flow Pro formula to version ${{ github.event.client_payload.version }}
+
+            SHA256: `${{ github.event.client_payload.sha256 }}`
+
+            This PR was automatically created by GitHub Actions.
+          branch: update-formula
+          base: main
+          delete-branch: true

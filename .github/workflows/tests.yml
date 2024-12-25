@@ -15,7 +15,7 @@ jobs:
 
       - name: Cache Homebrew Bundler RubyGems
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ steps.set-up-homebrew.outputs.gems-path }}
           key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
@@ -28,20 +28,24 @@ jobs:
       - name: Check formula style
         run: |
           brew style chornthorn/git-flow-pro
+
+      - name: Audit formula
+        run: |
           brew audit --strict --online chornthorn/git-flow-pro
 
       - name: Run brew test-bot
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
         run: |
+          mkdir -p ~/Library/Logs/Homebrew/
           brew test-bot --only-cleanup-before
           brew test-bot --only-setup
           brew test-bot --only-tap-syntax
           brew test-bot --only-formulae
-        env:
-          HOMEBREW_NO_AUTO_UPDATE: 1
 
       - name: Upload logs
-        if: failure()
-        uses: actions/upload-artifact@v3
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: logs
+          name: brew-logs
           path: ~/Library/Logs/Homebrew/
