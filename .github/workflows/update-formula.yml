@@ -39,20 +39,3 @@ jobs:
         run: |
           brew tap chornthorn/git-flow-pro
           brew audit --strict --online git-flow-pro
-
-      - name: Create Pull Request
-        if: failure()
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          commit-message: "Update formula to version ${{ github.event.client_payload.version }}"
-          title: "Update formula to version ${{ github.event.client_payload.version }}"
-          body: |
-            Automated update of Git Flow Pro formula to version ${{ github.event.client_payload.version }}
-
-            SHA256: `${{ github.event.client_payload.sha256 }}`
-
-            This PR was automatically created by GitHub Actions.
-          branch: update-formula
-          base: main
-          delete-branch: true
