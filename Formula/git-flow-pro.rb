@@ -5,11 +5,13 @@ class GitFlowPro < Formula
   sha256 "d83550dd4a28b1fd0ca49c58a2c00676d0a37d6e8294f984d6fdb59725d84a05"
   license "MIT"
 
-  head "https://github.com/chornthorn/git-flow-pro.git", branch: "main"
+  head do
+    url "https://github.com/chornthorn/git-flow-pro.git", branch: "main"
+  end
 
   livecheck do
     url :stable
-    strategy :github_latest
+    regex(/^v?(\d+(?:\.\d+)+)$/i)
   end
 
   depends_on "git"
@@ -24,7 +26,7 @@ class GitFlowPro < Formula
   def caveats
     <<~EOS
       To complete the installation, run:
-      /bin/zsh -c "$(#{opt_prefix}/scripts/remote-install.sh)"
+        /bin/zsh -c "$(#{opt_prefix}/scripts/remote-install.sh)"
 
       Type 'githelp' to see available commands.
 
@@ -34,11 +36,12 @@ class GitFlowPro < Formula
   end
 
   test do
-    system "#{opt_prefix}/scripts/install.sh", "--help"
+    assert_match "Git Flow Pro", shell_output("#{opt_prefix}/scripts/install.sh --help")
     assert_match "Git Flow Pro", shell_output("zsh -c 'source #{opt_prefix}/scripts/install.sh && githelp'")
+    
     system "git", "init"
     system "git", "config", "user.name", "BrewTestBot"
     system "git", "config", "user.email", "brew@test.bot"
-    assert_match "Initialized empty Git repository", shell_output("git init 2>&1")
+    assert_predicate testpath/".git", :exist?
   end
 end
