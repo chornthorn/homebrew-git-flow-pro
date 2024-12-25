@@ -21,7 +21,6 @@ jobs:
           VERSION: ${{ github.event.client_payload.version }}
           SHA256: ${{ github.event.client_payload.sha256 }}
         run: |
-          VERSION_NO_V="${VERSION#v}"
           sed -i 's|url ".*"|url "https://github.com/chornthorn/git-flow-pro/archive/refs/tags/'"${VERSION}"'.tar.gz"|' Formula/git-flow-pro.rb
           sed -i 's|sha256 ".*"|sha256 "'"${SHA256}"'"|' Formula/git-flow-pro.rb
 
