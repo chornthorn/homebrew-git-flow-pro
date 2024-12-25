@@ -23,12 +23,19 @@ jobs:
           cp -r homebrew-git-flow-pro "$(brew --repo)/Library/Taps/chornthorn/"
           brew tap
 
+      - name: Install dependencies
+        run: |
+          brew install ruby-style-checker
+          brew install shellcheck
+
       - name: Run tests
         run: |
+          cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          brew style chornthorn/git-flow-pro
           brew test-bot --only-tap-syntax
+          brew audit --strict chornthorn/git-flow-pro/git-flow-pro
           brew install --build-from-source chornthorn/git-flow-pro/git-flow-pro
           brew test chornthorn/git-flow-pro/git-flow-pro
-          brew audit --strict chornthorn/git-flow-pro/git-flow-pro
 
       - name: Upload logs
         if: always()
