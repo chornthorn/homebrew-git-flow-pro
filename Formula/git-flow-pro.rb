@@ -33,7 +33,6 @@ class GitFlowPro < Formula
 
   test do
     # Create test Zsh environment
-    testpath.install resource("scripts")
     (testpath/".zshrc").write <<~EOS
       export PATH="#{bin}:$PATH"
       source #{opt_prefix}/scripts/install.sh
