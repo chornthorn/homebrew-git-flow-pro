@@ -25,7 +25,7 @@ jobs:
       - name: Setup tap
         run: |
           TAP_PATH="$(brew --repo)/Library/Taps/chornthorn"
-          rm -rf "$TAP_PATH/homebrew-git-flow-pro"
+          sudo rm -rf "$TAP_PATH/homebrew-git-flow-pro"
           mkdir -p "$TAP_PATH"
           cp -r homebrew-git-flow-pro "$TAP_PATH/"
           cd "$TAP_PATH/homebrew-git-flow-pro" || exit 1
@@ -33,6 +33,7 @@ jobs:
           brew update
 
       - name: Verify Download and SHA256
+        id: verify
         env:
           VERSION: ${{ github.event.client_payload.version }}
           SHA256: ${{ github.event.client_payload.sha256 }}
@@ -40,19 +41,29 @@ jobs:
           # Download the tarball and verify SHA256
           TARBALL_URL="https://github.com/chornthorn/git-flow-pro/archive/refs/tags/${VERSION}.tar.gz"
           DOWNLOAD_PATH=$(mktemp -d)/git-flow-pro-${VERSION}.tar.gz
+
+          echo "Downloading from: $TARBALL_URL"
           curl -L "$TARBALL_URL" -o "$DOWNLOAD_PATH"
+
           ACTUAL_SHA256=$(sha256sum "$DOWNLOAD_PATH" | cut -d' ' -f1)
+          echo "ACTUAL_SHA256=${ACTUAL_SHA256}" >> $GITHUB_ENV
 
           if [ "$ACTUAL_SHA256" != "$SHA256" ]; then
             echo "SHA256 mismatch!"
             echo "Expected: $SHA256"
             echo "Actual  : $ACTUAL_SHA256"
-            echo "::set-output name=actual_sha256::$ACTUAL_SHA256"
+            echo "Download path: $DOWNLOAD_PATH"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "actual_sha256=$ACTUAL_SHA256" >> $GITHUB_OUTPUT
             exit 1
           fi
+
           echo "SHA256 verification successful"
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "actual_sha256=$ACTUAL_SHA256" >> $GITHUB_OUTPUT
 
       - name: Update Formula
+        if: steps.verify.outputs.status == 'success'
         env:
           VERSION: ${{ github.event.client_payload.version }}
           SHA256: ${{ github.event.client_payload.sha256 }}
@@ -70,18 +81,21 @@ jobs:
           sed -i.bak "s|sha256 \"[a-fA-F0-9]*\"|sha256 \"${SHA256}\"|" Formula/git-flow-pro.rb
 
       - name: Verify Formula
+        if: steps.verify.outputs.status == 'success'
         run: |
           cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro" || exit 1
           brew audit --strict --online git-flow-pro
           brew style git-flow-pro
 
       - name: Configure Git
+        if: steps.verify.outputs.status == 'success'
         run: |
           cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
       - name: Commit Changes
+        if: steps.verify.outputs.status == 'success'
         run: |
           cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro" || exit 1
           if git diff --quiet; then
@@ -93,7 +107,7 @@ jobs:
           git push origin HEAD:main || exit 1
 
       - name: Create Pull Request
-        if: failure()
+        if: failure() && steps.verify.outputs.status != 'failed'
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -109,15 +123,41 @@ jobs:
           base: main
           delete-branch: true
 
-      - name: Cleanup
-        if: always()
-        run: |
-          TAP_PATH="$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
-          if [ -d "$TAP_PATH" ]; then
-            sudo rm -rf "$TAP_PATH"
-          fi
-          brew cleanup
-          brew untap chornthorn/git-flow-pro || true
+      - name: Create Issue on SHA256 Mismatch
+        if: failure() && steps.verify.outputs.status == 'failed'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `SHA256 mismatch for version ${process.env.VERSION}`,
+              body: `SHA256 verification failed for version ${process.env.VERSION}
+
+              Expected SHA256: \`${process.env.SHA256}\`
+              Actual SHA256: \`${process.env.ACTUAL_SHA256}\`
+
+              Please verify the correct SHA256 hash and update the workflow dispatch accordingly.`,
+              labels: ['bug', 'automation']
+            });
+
+      - name: Create Issue on Other Failures
+        if: failure() && steps.verify.outputs.status != 'failed'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Formula update failed for version ${process.env.VERSION}`,
+              body: `The formula update workflow failed. Please check the logs for more details.
+
+              Version: ${process.env.VERSION}
+              SHA256: ${process.env.SHA256}`,
+              labels: ['bug', 'automation']
+            });
 
       - name: Upload logs
         if: always()
@@ -127,3 +167,15 @@ jobs:
           path: |
             ~/Library/Logs/Homebrew/
             $(brew --repo)/Library/Logs/Homebrew/
+
+      - name: Cleanup
+        if: always()
+        continue-on-error: true
+        run: |
+          set +e
+          TAP_PATH="$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          if [ -d "$TAP_PATH" ]; then
+            sudo rm -rf "$TAP_PATH"
+          fi
+          brew cleanup
+          brew untap chornthorn/git-flow-pro || true
