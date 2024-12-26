@@ -6,6 +6,11 @@ on:
 jobs:
   update-formula:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
     steps:
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@master
@@ -49,19 +54,22 @@ jobs:
           brew install --build-from-source chornthorn/git-flow-pro/git-flow-pro
           brew test chornthorn/git-flow-pro/git-flow-pro
 
-      - name: Commit and Push
+      - name: Commit Changes
         run: |
           cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
           git add Formula/git-flow-pro.rb
           git commit -m "Update formula to version ${VERSION}"
           git push
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
         if: failure()
+        uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          path: "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
           commit-message: "Update formula to version ${{ github.event.client_payload.version }}"
           title: "Update formula to version ${{ github.event.client_payload.version }}"
           body: |
@@ -79,17 +87,20 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: brew-logs
-          path: ~/Library/Logs/Homebrew/
+          path: |
+            ~/Library/Logs/Homebrew/
+            $(brew --repo)/Library/Logs/Homebrew/
 
-      - name: Notify on failure
+      - name: Create Issue on Failure
         if: failure()
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           script: |
-            github.rest.issues.create({
+            await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: 'Formula update failed',
               body: 'The formula update workflow failed. Please check the logs.',
               labels: ['bug', 'automation']
-            })
+            });
