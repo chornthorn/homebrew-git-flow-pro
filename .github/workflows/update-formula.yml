@@ -32,6 +32,26 @@ jobs:
           brew tap --force chornthorn/git-flow-pro
           brew update
 
+      - name: Verify Download and SHA256
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+          SHA256: ${{ github.event.client_payload.sha256 }}
+        run: |
+          # Download the tarball and verify SHA256
+          TARBALL_URL="https://github.com/chornthorn/git-flow-pro/archive/refs/tags/${VERSION}.tar.gz"
+          DOWNLOAD_PATH=$(mktemp -d)/git-flow-pro-${VERSION}.tar.gz
+          curl -L "$TARBALL_URL" -o "$DOWNLOAD_PATH"
+          ACTUAL_SHA256=$(sha256sum "$DOWNLOAD_PATH" | cut -d' ' -f1)
+
+          if [ "$ACTUAL_SHA256" != "$SHA256" ]; then
+            echo "SHA256 mismatch!"
+            echo "Expected: $SHA256"
+            echo "Actual  : $ACTUAL_SHA256"
+            echo "::set-output name=actual_sha256::$ACTUAL_SHA256"
+            exit 1
+          fi
+          echo "SHA256 verification successful"
+
       - name: Update Formula
         env:
           VERSION: ${{ github.event.client_payload.version }}
@@ -42,6 +62,10 @@ jobs:
             echo "Error: Version or SHA256 not provided"
             exit 1
           fi
+
+          # Clear Homebrew cache
+          rm -rf "$(brew --cache)"
+
           sed -i.bak "s|url \"https://github.com/chornthorn/git-flow-pro/archive/refs/tags/.*\.tar\.gz\"|url \"https://github.com/chornthorn/git-flow-pro/archive/refs/tags/${VERSION}.tar.gz\"|" Formula/git-flow-pro.rb
           sed -i.bak "s|sha256 \"[a-fA-F0-9]*\"|sha256 \"${SHA256}\"|" Formula/git-flow-pro.rb
 
@@ -100,10 +124,17 @@ jobs:
         with:
           github-token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           script: |
+            const sha256Output = process.env.actual_sha256 || 'unknown';
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `Formula update failed for version ${process.env.VERSION}`,
-              body: 'The formula update workflow failed. Please check the logs.',
+              body: `The formula update workflow failed. 
+              
+              Version: ${process.env.VERSION}
+              Expected SHA256: ${process.env.SHA256}
+              Actual SHA256: ${sha256Output}
+              
+              Please check the logs for more details.`,
               labels: ['bug', 'automation']
             });
