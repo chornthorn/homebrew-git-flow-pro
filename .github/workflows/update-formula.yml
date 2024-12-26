@@ -35,16 +35,20 @@ jobs:
       - name: Verify Download and SHA256
         id: verify
         env:
-          VERSION: ${{ github.event.client_payload.version }}
+          RAW_VERSION: ${{ github.event.client_payload.version }}
           SHA256: ${{ github.event.client_payload.sha256 }}
         run: |
           # Check if VERSION is provided
-          if [ -z "${VERSION}" ]; then
+          if [ -z "${RAW_VERSION}" ]; then
             echo "Error: Version is not provided"
             echo "status=failed" >> $GITHUB_OUTPUT
             echo "error_message=Version is not provided" >> $GITHUB_OUTPUT
             exit 1
           fi
+
+          # Normalize version: remove any 'v' prefix and ensure clean version number
+          VERSION=$(echo "${RAW_VERSION}" | sed 's/^v*//')
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
           # Check if SHA256 is provided
           if [ -z "${SHA256}" ]; then
@@ -54,12 +58,12 @@ jobs:
             exit 1
           fi
 
-          echo "Checking version: v${VERSION}"
+          echo "Processing version: ${VERSION}"
           echo "Expected SHA256: ${SHA256}"
 
           # Download the tarball and verify SHA256
           TARBALL_URL="https://github.com/chornthorn/git-flow-pro/archive/refs/tags/v${VERSION}.tar.gz"
-          DOWNLOAD_PATH=$(mktemp -d)/git-flow-pro-v${VERSION}.tar.gz
+          DOWNLOAD_PATH=$(mktemp -d)/git-flow-pro-${VERSION}.tar.gz
 
           echo "Downloading from: $TARBALL_URL"
           if ! curl -L "$TARBALL_URL" -o "$DOWNLOAD_PATH"; then
@@ -89,7 +93,7 @@ jobs:
       - name: Update Formula
         if: steps.verify.outputs.status == 'success'
         env:
-          VERSION: ${{ github.event.client_payload.version }}
+          VERSION: ${{ env.VERSION }}
           SHA256: ${{ github.event.client_payload.sha256 }}
         run: |
           cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro" || exit 1
