@@ -41,7 +41,7 @@ class GitFlowPro < Formula
     # Verify script files exist
     assert_predicate opt_prefix/"scripts/install.sh", :exist?
     assert_predicate opt_prefix/"scripts/remote-install.sh", :exist?
-    
+
     # Test script is executable
     assert_predicate opt_prefix/"scripts/install.sh", :executable?
     assert_predicate opt_prefix/"scripts/remote-install.sh", :executable?
