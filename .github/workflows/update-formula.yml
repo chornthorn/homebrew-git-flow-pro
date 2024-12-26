@@ -23,8 +23,10 @@ jobs:
 
       - name: Setup tap
         run: |
-          mkdir -p "$(brew --repo)/Library/Taps/chornthorn"
-          cp -r homebrew-git-flow-pro "$(brew --repo)/Library/Taps/chornthorn/"
+          TAP_PATH="$(brew --repo)/Library/Taps/chornthorn"
+          rm -rf "$TAP_PATH/homebrew-git-flow-pro"
+          mkdir -p "$TAP_PATH"
+          cp -r homebrew-git-flow-pro "$TAP_PATH/"
           brew tap
 
       - name: Configure Git
