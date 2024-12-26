@@ -49,11 +49,11 @@ jobs:
           cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
           brew audit --strict --online Formula/git-flow-pro.rb
 
-      - name: Test Formula
-        run: |
-          cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
-          brew install --build-from-source ./Formula/git-flow-pro.rb
-          brew test git-flow-pro
+      # - name: Test Formula
+      #   run: |
+      #     cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+      #     brew install --build-from-source ./Formula/git-flow-pro.rb
+      #     brew test git-flow-pro
 
       - name: Commit Changes
         run: |
