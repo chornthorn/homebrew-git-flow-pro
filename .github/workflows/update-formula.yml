@@ -27,13 +27,9 @@ jobs:
           rm -rf "$TAP_PATH/homebrew-git-flow-pro"
           mkdir -p "$TAP_PATH"
           cp -r homebrew-git-flow-pro "$TAP_PATH/"
-          brew tap
-
-      - name: Configure Git
-        run: |
-          cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          cd "$TAP_PATH/homebrew-git-flow-pro"
+          brew tap --force chornthorn/git-flow-pro
+          brew update
 
       - name: Update Formula
         env:
@@ -49,12 +45,15 @@ jobs:
           sed -i 's|sha256 ".*"|sha256 "'"${SHA256}"'"|' Formula/git-flow-pro.rb
 
       - name: Verify Formula
-        run: brew audit --strict --online chornthorn/git-flow-pro
+        run: |
+          cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          brew audit --strict --online Formula/git-flow-pro.rb
 
       - name: Test Formula
         run: |
-          brew install --build-from-source chornthorn/git-flow-pro/git-flow-pro
-          brew test chornthorn/git-flow-pro/git-flow-pro
+          cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro"
+          brew install --build-from-source ./Formula/git-flow-pro.rb
+          brew test git-flow-pro
 
       - name: Commit Changes
         run: |
