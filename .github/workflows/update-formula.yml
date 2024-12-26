@@ -42,15 +42,14 @@ jobs:
             echo "Error: Version or SHA256 not provided"
             exit 1
           fi
-          # Use more specific pattern matching
           sed -i.bak "s|url \"https://github.com/chornthorn/git-flow-pro/archive/refs/tags/.*\.tar\.gz\"|url \"https://github.com/chornthorn/git-flow-pro/archive/refs/tags/${VERSION}.tar.gz\"|" Formula/git-flow-pro.rb
           sed -i.bak "s|sha256 \"[a-fA-F0-9]*\"|sha256 \"${SHA256}\"|" Formula/git-flow-pro.rb
 
       - name: Verify Formula
         run: |
           cd "$(brew --repo)/Library/Taps/chornthorn/homebrew-git-flow-pro" || exit 1
-          brew audit --strict --online Formula/git-flow-pro.rb
-          brew style Formula/git-flow-pro.rb
+          brew audit --strict --online git-flow-pro
+          brew style git-flow-pro
 
       - name: Configure Git
         run: |
